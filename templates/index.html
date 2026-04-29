@@ -1,0 +1,525 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mission Factory Dashboard</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 500px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px 20px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 24px;
+            font-weight: 700;
+            margin-bottom: 5px;
+        }
+
+        .header p {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+
+        .status-bar {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 10px;
+            padding: 12px;
+            background: #f8f9fa;
+            border-bottom: 1px solid #e9ecef;
+        }
+
+        .status-indicator {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: #27ae60;
+            animation: pulse 2s infinite;
+        }
+
+        .status-indicator.disconnected {
+            background: #e74c3c;
+            animation: none;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .status-text {
+            font-size: 13px;
+            color: #495057;
+            font-weight: 500;
+        }
+
+        .form-section {
+            padding: 25px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-label {
+            display: block;
+            font-size: 14px;
+            font-weight: 600;
+            color: #2c3e50;
+            margin-bottom: 8px;
+        }
+
+        .form-label .step {
+            display: inline-block;
+            width: 24px;
+            height: 24px;
+            background: #667eea;
+            color: white;
+            border-radius: 50%;
+            text-align: center;
+            line-height: 24px;
+            font-size: 12px;
+            margin-right: 8px;
+        }
+
+        select, input {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #e9ecef;
+            border-radius: 10px;
+            font-size: 16px;
+            transition: all 0.3s;
+            background: white;
+        }
+
+        select:focus, input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .piece-info {
+            margin-top: 8px;
+            padding: 10px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            font-size: 14px;
+            min-height: 40px;
+            display: flex;
+            align-items: center;
+        }
+
+        .piece-info.valid {
+            background: #d4edda;
+            color: #155724;
+            border-left: 4px solid #28a745;
+        }
+
+        .piece-info.invalid {
+            background: #f8d7da;
+            color: #721c24;
+            border-left: 4px solid #dc3545;
+        }
+
+        .piece-info.empty {
+            color: #6c757d;
+            font-style: italic;
+        }
+
+        .btn-generate {
+            width: 100%;
+            padding: 16px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 18px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-top: 10px;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-generate:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
+        }
+
+        .btn-generate:active:not(:disabled) {
+            transform: translateY(0);
+        }
+
+        .btn-generate:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .btn-generate.loading {
+            position: relative;
+            color: transparent;
+        }
+
+        .btn-generate.loading::after {
+            content: "";
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            top: 50%;
+            left: 50%;
+            margin-left: -10px;
+            margin-top: -10px;
+            border: 3px solid rgba(255,255,255,0.3);
+            border-radius: 50%;
+            border-top-color: white;
+            animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .result-message {
+            margin-top: 15px;
+            padding: 12px;
+            border-radius: 8px;
+            font-size: 14px;
+            text-align: center;
+            display: none;
+        }
+
+        .result-message.show {
+            display: block;
+        }
+
+        .result-message.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .result-message.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .reference-list {
+            max-height: 300px;
+            overflow-y: auto;
+            margin-top: 20px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 10px;
+        }
+
+        .reference-list h3 {
+            font-size: 16px;
+            color: #2c3e50;
+            margin-bottom: 10px;
+            position: sticky;
+            top: 0;
+            background: #f8f9fa;
+            padding: 5px 0;
+        }
+
+        .ref-item {
+            padding: 8px;
+            font-size: 13px;
+            border-bottom: 1px solid #e9ecef;
+            display: flex;
+            gap: 10px;
+        }
+
+        .ref-item:last-child {
+            border-bottom: none;
+        }
+
+        .ref-no {
+            font-weight: 700;
+            color: #667eea;
+            min-width: 30px;
+        }
+
+        .ref-code {
+            font-weight: 600;
+            color: #495057;
+            min-width: 60px;
+        }
+
+        .ref-name {
+            color: #6c757d;
+        }
+
+        .download-link {
+            display: inline-block;
+            margin-top: 10px;
+            padding: 10px 20px;
+            background: #28a745;
+            color: white;
+            text-decoration: none;
+            border-radius: 8px;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+
+        .download-link:hover {
+            background: #218838;
+            transform: translateY(-2px);
+        }
+
+        /* Mobile responsiveness */
+        @media (max-width: 600px) {
+            body {
+                padding: 10px;
+            }
+
+            .container {
+                border-radius: 15px;
+            }
+
+            .header h1 {
+                font-size: 20px;
+            }
+
+            .form-section {
+                padding: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🏭 Mission Factory</h1>
+            <p>Production Slip Generator</p>
+        </div>
+
+        <div class="status-bar">
+            <div class="status-indicator" id="statusIndicator"></div>
+            <span class="status-text" id="statusText">Checking connection...</span>
+        </div>
+
+        <div class="form-section">
+            <form id="slipForm">
+                <div class="form-group">
+                    <label class="form-label">
+                        <span class="step">1</span>
+                        Select Slip Type
+                    </label>
+                    <select id="slipType" required>
+                        <option value="T/N">T/N</option>
+                        <option value="Skivi">Skivi</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">
+                        <span class="step">2</span>
+                        Enter Slip Number
+                    </label>
+                    <input type="text" id="slipNo" placeholder="Numbers only" required pattern="[0-9]+">
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">
+                        <span class="step">3</span>
+                        Enter Piece Reference No.
+                    </label>
+                    <input type="text" id="refNo" placeholder="Numbers only" required pattern="[0-9]+">
+                    <div class="piece-info empty" id="pieceInfo">No piece selected</div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">
+                        <span class="step">4</span>
+                        Enter Total Pieces
+                    </label>
+                    <input type="text" id="pcs" placeholder="Numbers only" required pattern="[0-9]+">
+                </div>
+
+                <button type="submit" class="btn-generate" id="generateBtn">
+                    GENERATE & DOWNLOAD
+                </button>
+
+                <div class="result-message" id="resultMessage"></div>
+            </form>
+
+            <div class="reference-list">
+                <h3>📋 Reference List</h3>
+                {% for ref_no, info in piece_list.items() %}
+                <div class="ref-item">
+                    <span class="ref-no">{{ ref_no }}.</span>
+                    <span class="ref-code">{{ info[0] }}</span>
+                    <span class="ref-name">{{ info[1] }}</span>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Check connection status
+        async function checkConnection() {
+            try {
+                const response = await fetch('/health');
+                const data = await response.json();
+                
+                const indicator = document.getElementById('statusIndicator');
+                const statusText = document.getElementById('statusText');
+                
+                if (data.sheets_connected) {
+                    indicator.classList.remove('disconnected');
+                    statusText.textContent = 'Sheets Connected';
+                } else {
+                    indicator.classList.add('disconnected');
+                    statusText.textContent = 'Sheets Disconnected';
+                }
+            } catch (error) {
+                document.getElementById('statusIndicator').classList.add('disconnected');
+                document.getElementById('statusText').textContent = 'Connection Error';
+            }
+        }
+
+        // Check piece info when reference number changes
+        document.getElementById('refNo').addEventListener('input', async function() {
+            const refNo = this.value.trim();
+            const slipType = document.getElementById('slipType').value;
+            const pieceInfo = document.getElementById('pieceInfo');
+
+            if (!refNo) {
+                pieceInfo.className = 'piece-info empty';
+                pieceInfo.textContent = 'No piece selected';
+                return;
+            }
+
+            try {
+                const response = await fetch(`/get_piece_info/${refNo}`);
+                
+                if (!response.ok) {
+                    pieceInfo.className = 'piece-info invalid';
+                    pieceInfo.textContent = 'Invalid reference number';
+                    return;
+                }
+
+                const data = await response.json();
+                
+                if (data.expected_type !== slipType) {
+                    pieceInfo.className = 'piece-info invalid';
+                    pieceInfo.textContent = `⚠ Ref ${refNo} belongs to ${data.expected_type} slips only!`;
+                } else {
+                    pieceInfo.className = 'piece-info valid';
+                    pieceInfo.textContent = `${data.code} ${data.name}`;
+                }
+            } catch (error) {
+                pieceInfo.className = 'piece-info invalid';
+                pieceInfo.textContent = 'Error checking reference';
+            }
+        });
+
+        // Also check when slip type changes
+        document.getElementById('slipType').addEventListener('change', function() {
+            document.getElementById('refNo').dispatchEvent(new Event('input'));
+        });
+
+        // Form submission
+        document.getElementById('slipForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+
+            const generateBtn = document.getElementById('generateBtn');
+            const resultMessage = document.getElementById('resultMessage');
+
+            // Get form values
+            const formData = {
+                slip_type: document.getElementById('slipType').value,
+                slip_no: document.getElementById('slipNo').value.trim(),
+                ref_no: document.getElementById('refNo').value.trim(),
+                pcs: document.getElementById('pcs').value.trim()
+            };
+
+            // Disable button and show loading
+            generateBtn.disabled = true;
+            generateBtn.classList.add('loading');
+            resultMessage.classList.remove('show');
+
+            try {
+                const response = await fetch('/generate', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(formData)
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    // Success
+                    resultMessage.className = 'result-message success show';
+                    resultMessage.innerHTML = `
+                        ✅ ${data.message}
+                        <br>
+                        <a href="/download/${data.filename}" class="download-link" download>
+                            📥 Download PDF
+                        </a>
+                    `;
+
+                    // Reset form
+                    document.getElementById('slipForm').reset();
+                    document.getElementById('pieceInfo').className = 'piece-info empty';
+                    document.getElementById('pieceInfo').textContent = 'No piece selected';
+                } else {
+                    // Error
+                    resultMessage.className = 'result-message error show';
+                    resultMessage.textContent = `❌ ${data.error}`;
+                }
+            } catch (error) {
+                resultMessage.className = 'result-message error show';
+                resultMessage.textContent = `❌ Network error: ${error.message}`;
+            } finally {
+                generateBtn.disabled = false;
+                generateBtn.classList.remove('loading');
+            }
+        });
+
+        // Only allow numbers in specific inputs
+        ['slipNo', 'refNo', 'pcs'].forEach(id => {
+            document.getElementById(id).addEventListener('keypress', function(e) {
+                if (!/[0-9]/.test(e.key)) {
+                    e.preventDefault();
+                }
+            });
+        });
+
+        // Check connection on load
+        checkConnection();
+        setInterval(checkConnection, 30000); // Check every 30 seconds
+    </script>
+</body>
+</html>

@@ -1,0 +1,7 @@
+flask
+gspread
+oauth2client
+python-barcode
+reportlab
+pillow
+gunicorn
