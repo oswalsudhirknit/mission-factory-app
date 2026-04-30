@@ -11,13 +11,21 @@ import os
 import io
 import tempfile
 from datetime import datetime
+import json
 
 app = Flask(__name__)
 
 # ═══════════════════════════════════════════════════════════════════
 # CONFIGURATION
 # ═══════════════════════════════════════════════════════════════════
-JSON_FILE = "cloth-barcode-system-893c74d7606d.json"
+# Load Google credentials
+if os.environ.get("GOOGLE_CREDENTIALS"):
+    creds_dict = json.loads(os.environ.get("GOOGLE_CREDENTIALS"))
+    JSON_FILE = "/tmp/google_credentials.json"
+    with open(JSON_FILE, "w") as f:
+        json.dump(creds_dict, f)
+else:
+    JSON_FILE = "cloth-barcode-system-893c74d7606d.json"
 SHEET_NAME = "Mission Factory"
 OUTPUT_FOLDER = "generated_slips"
 os.makedirs(OUTPUT_FOLDER, exist_ok=True)
